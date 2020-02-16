@@ -303,20 +303,22 @@ class Connection:
         return resp_message['groups']['groups']
 
     def find_group_uuid(self, identity, group_name):
-        def topdown_search(main_group):
-            if main_group['name'] == group_name:
+        assert group_name, 'Can not find from an empty group name.'
+        def traversal_search(main_group, path=None):
+            if path == group_name:
                 return main_group['uuid']
 
+            path_list = []
+            if path:
+                path_list.append(path)
+
             for db_group in main_group['children']:
-                if db_group['name'] == group_name:
-                    return db_group['uuid']
-
-                child_group = topdown_search(db_group)
-
+                path = '/'.join(path_list + [db_group['name']])
+                child_group = traversal_search(db_group, path=path)
                 if child_group:
                     return child_group
-
-        return topdown_search(self.get_database_groups(identity)[0])
+            
+        return traversal_search(self.get_database_groups(identity)[0])
 
     def lock_database(self, identity):
         action = 'lock-database'

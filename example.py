@@ -32,14 +32,23 @@ def main():
     c.create_password(id)
     groups = c.get_database_groups(id)
     root = groups[0] # {name: 'AAAA', uuid: 'BBBB', children: [...]}
-    foo = c.create_database_group(id, 'foo')
-    assert foo['uuid'] == c.find_group_uuid(id, 'foo')
+    
+    # groups on root level are good
+    easy_foo = c.create_database_group(id, 'foo')
+    assert easy_foo['uuid'] == c.find_group_uuid(id, 'foo')
+
+    # groups on any level are good too
+    hard_foo = c.create_database_group(id, 'foo/bar/baz')
+    assert hard_foo['uuid'] == c.find_group_uuid(id, 'foo/bar/baz')
+
+    # this method can not find root, because it search on top of it
+    assert c.find_group_uuid(id, root['name']) is None
     
     c.set_login(id, 
                 url='https://python-test123', 
                 login='test-user', 
                 password='test-password', 
-                group_uuid=foo['uuid'], 
+                group_uuid=hard_foo['uuid'], 
                 submit_url=None)
     
     c.get_logins(id, url='https://python-test123')
